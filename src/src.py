@@ -16,7 +16,10 @@ import pandas as pd
 
 #%% funciones de preprocesamiento
 def preprocesamiento(img):
-    return cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)    
+    # with open(img, 'r') as f:
+    m = cv2.imread(img)
+    m = cv2.cvtColor(m, cv2.COLOR_BGR2GRAY)    
+    return m
 #%% funciones de transcripcion
 def ocr_tesseract(filename, path_in, path_out):
     img = cv2.imread(path_in+filename)
@@ -78,10 +81,11 @@ def chequeo_calidad(data, output_file, umbral_palabrasdesconocidas = 0.015):
     writer.save()
 
 #%% 
-def procesar_imgs(path_in, path_out, modelo_corrector = './resources/model_juridico.bin'):
+def procesar_imgs(path_in, path_out, modelo_corrector = 'herramientas/model_juridico.bin'):
     corrector = inicializar_corrector(modelo_corrector)
     data = []
     for filename in path_in:
+        print(filename)
         texto = ocr_tesseract(filename, path_in, path_out)
         texto = postprocesamiento(texto, corrector)
         pp_desc = palabras_desconocidas(texto,corrector)/len(texto.split())
