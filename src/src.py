@@ -13,7 +13,10 @@ import jamspell
 import re
 import os
 import pandas as pd
-
+import matplotlib.pyplot as plt
+#%% directorios
+path_in = 'input_data/'
+path_out = 'out_data/'
 #%% funciones de preprocesamiento
 def preprocesamiento(img):
     # with open(img, 'r') as f:
@@ -22,16 +25,15 @@ def preprocesamiento(img):
     return m
 #%% funciones de transcripcion
 def ocr_tesseract(filename, path_in, path_out):
-    img = cv2.imread(path_in+filename)
-    preprocessed_img = preprocesamiento(img)
+    preprocessed_img = preprocesamiento(path_in+filename)
     if isinstance(preprocessed_img, np.ndarray):
-        custom_config = r'-c tessedit_char_whitelist="AÁBCDEÉFGHIÍJKLMNÑOÓPQRSTUÚVWXYZaábcdeéfghiíjklmnñoópqrstuúvwxyz0123456789 -_/.,:;"'
+        custom_config = r'-c tessedit_char_whitelist="AÁBCDEÉFGHIÍJKLMNÑOÓPQRSTUÚVWXYZaábcdeéfghiíjklmnñoópqrstuúvwxyz0123456789 -_/.,:;()"'
         text = str(((pytesseract.image_to_string(preprocessed_img,lang="spa", config=custom_config))))
         with open(str(path_out+filename), "wb") as f:
             f.write(text.encode("utf-8"))
     return text
 #%% funciones de correccion del texto
-def inicializar_corrector(path_modelo = './resources/model_juridico.bin'):
+def inicializar_corrector(path_modelo = './herramientas/model_juridico.bin'):
     corrector = jamspell.TSpellCorrector()
     assert(corrector.LoadLangModel(path_modelo))
     return corrector
@@ -45,7 +47,7 @@ def unir_saltos_linea(text):
 
 def filtrar_simbolosvalidos(texto):
     temp = re.sub("[^A-Za-z0-9áéíóúüñÁÉÍÓÚÜÑ.,;\s]", ' ', texto)
-    temp = re.sub("\n", ' ', temp)
+    # temp = re.sub("\n", ' ', temp)
     return re.sub(' +', ' ', temp)
 
 def es_basura(string):
@@ -84,15 +86,64 @@ def chequeo_calidad(data, output_file, umbral_palabrasdesconocidas = 0.015):
 def procesar_imgs(path_in, path_out, modelo_corrector = 'herramientas/model_juridico.bin'):
     corrector = inicializar_corrector(modelo_corrector)
     data = []
-    for filename in path_in:
-        print(filename)
-        texto = ocr_tesseract(filename, path_in, path_out)
-        texto = postprocesamiento(texto, corrector)
-        pp_desc = palabras_desconocidas(texto,corrector)/len(texto.split())
-        data.append({'filename':filename, 'palabras_desconocidas':pp_desc})
-        with open(path_out+filename, "wb") as text_file:
-            text_file.write(texto.encode("utf-8"))
-            
+    for filename in os.listdir(path_in):
+        if filename.split('.')[-1] == 'tif':
+            print(filename)
+            texto = ocr_tesseract(filename, path_in, path_out)
+            texto = postprocesamiento(texto, corrector)
+            pp_desc = palabras_desconocidas(texto,corrector)/len(texto.split())
+            data.append({'filename':filename, 'palabras_desconocidas':pp_desc})
+            with open(path_out+filename, "wb") as text_file:
+                text_file.write(texto.encode("utf-8"))
+#%%
+# ejemplo
+img = path_in+'imagen1.tif'
+img_preprocesada = preprocesamiento(img)
+#%%
+# cv2.imshow('ventana1', img_preprocesada)
+# cv2.waitKey(0)
+cv2.destroyAllWindows()    
+#%%
+plt.figure(figsize = (34,23))
+plt.imshow(img_preprocesada, cmap = 'gray')
+#%%
+img_preprocesada.shape
+#%%
+texto_img = ocr_tesseract('imagen1.tif', path_in, path_out)
+corrector = inicializar_corrector()
+texto_img_corregido = postprocesamiento(texto_img, corrector)
+print(texto_img_corregido)
+#%%
+output_file = path_out+'resultados.xls'
 
 
-    
+
+
+
+
+chequeo_calidad(texto_img_corregido, output_file=path_out+'resultados', umbral_palabrasdesconocidas = 0.015)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
