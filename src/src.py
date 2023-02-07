@@ -89,24 +89,14 @@ def palabras_desconocidas(texto, corrector):
     return cantidad
 
 
-def chequeo_calidad(data, output_file, umbral_palabrasdesconocidas=0.015):
-    writer = pd.ExcelWriter(output_file, engine="xlsxwriter")
-    workbook = writer.book
-    percent_fmt = workbook.add_format({'num_format': '0.0%'})
-    emp_format = workbook.add_format({'bg_color': '#FFC7CE', 'font_color': '#000000', 'bold': True})
-    data.to_excel(writer, index=False, sheet_name="reporte")
-    worksheet = writer.sheets["reporte"]
-    worksheet.set_column('B:C', 12, percent_fmt)
-    worksheet.conditional_format(f"B2:B{len(data.index) + 1}",
-                                 {"type": "cell", "criteria": ">=", "value": umbral_palabrasdesconocidas,
-                                  "format": emp_format})
-    writer.save()
-
-
-# %%
 def procesar_imgs(path_in, path_out, modelo_corrector='herramientas/model_juridico.bin'):
     """
-    Guarda en reporte.csv
+    Exporta los archivos '.tif' de 'path_in' a formato json con toda la noticia como "Cuerpo".
+    Además, guarda en 'reporte.csv' la proporción de palabras desconocidas en la imagen.
+
+    :param path_in: directorio de donde tomar las imágenes.
+    :param path_out: directorio adonde se guardan los JSON y el CSV de reporte.
+    :param modelo_corrector: path del modelo del corrector ortográfico.
     """
     corrector = inicializar_corrector(modelo_corrector)
     data = []
@@ -156,5 +146,3 @@ def procesar_imgs(path_in, path_out, modelo_corrector='herramientas/model_juridi
 # print(texto_img_corregido)
 # # %%
 # output_file = path_out + 'resultados.xls'
-#
-# chequeo_calidad(texto_img_corregido, output_file=path_out + 'resultados', umbral_palabrasdesconocidas=0.015)
