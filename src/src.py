@@ -116,6 +116,8 @@ def procesar_imgs(path_in, path_out, modelo_corrector='herramientas/model_juridi
             data.append({'filename': filename, 'palabras_desconocidas': pp_desc})
             with open(path_out + filename, "wb") as text_file:
                 text_file.write(texto.encode("utf-8"))
+    reporte = pd.DataFrame(data=data)
+    reporte.to_csv(path_out+'reporte.csv', index = False)
 
 
 # %%
