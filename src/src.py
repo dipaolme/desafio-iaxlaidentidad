@@ -6,40 +6,50 @@ Created on Fri Dec 16 16:58:38 2022
 @author: mcerdeiro
 """
 import json
-
-# %% librerias
-import cv2
-import numpy as np
-import pytesseract
-import jamspell
-import re
 import os
-import pandas as pd
-import matplotlib.pyplot as plt
+import re
+import warnings
 
-# %% directorios
+# bibliotecas
+import cv2
+import jamspell
+import numpy as np
+import pandas as pd
+import pytesseract
+
+# directorios
 path_in = 'input_data/'
 path_out = 'out_data/'
 
 
-# %% funciones de preprocesamiento
-def preprocesamiento(img):
+# funciones de preprocesamiento
+def preprocesamiento(img) -> np.ndarray:
     # with open(img, 'r') as f:
     m = cv2.imread(img)
     m = cv2.cvtColor(m, cv2.COLOR_BGR2GRAY)
     return m
 
 
-# %% funciones de transcripcion
-def ocr_tesseract(filename, path_in, path_out):
+# funciones de transcripción
+def ocr_tesseract(filename, path_in):
+    """
+    Aplica el algoritmo de OCR a la imagen pasada por parámetro.
+
+    :param filename: nombre del archivo.
+    :param path_in: directorio donde se encuentra el archivo.
+    :return: string con el texto leído de la imagen o None si no pudo procesarse.
+    """
     preprocessed_img = preprocesamiento(path_in + filename)
     if isinstance(preprocessed_img, np.ndarray):
         custom_config = r'-c tessedit_char_whitelist="AÁBCDEÉFGHIÍJKLMNÑOÓPQRSTUÚVWXYZaábcdeéfghiíjklmnñoópqrstuúvwxyz0123456789 -_/.,:;()"'
-        text = str((pytesseract.image_to_string(preprocessed_img, lang="spa", config=custom_config)))
-    return text
+        text = str(pytesseract.image_to_string(preprocessed_img, lang="spa", config=custom_config))
+        return text
+
+    warnings.warn("Could not process OCR in", path_in + filename)
+    return None
 
 
-# %% funciones de correccion del texto
+# funciones de corrección del texto
 def inicializar_corrector(path_modelo='./herramientas/model_juridico.bin'):
     corrector = jamspell.TSpellCorrector()
     assert (corrector.LoadLangModel(path_modelo))
@@ -64,15 +74,26 @@ def filtrar_simbolosvalidos(texto):
     return re.sub(' +', ' ', temp)
 
 
-def es_basura(string):
-    return all(len(x) < 3 for x in string.split(' '))
+def es_basura(text):
+    """
+    Determina como basura si todos las palabras del texto tienen menos de 3 caracteres.
+    """
+    return all(len(x) < 3 for x in text.split(' '))
 
 
 def postprocesamiento(text, corrector):
+    """
+    Transforma el string crudo en texto: une los saltos de línea (unificando las palabras que se cortan al final de la
+    línea), filtra los caracteres válidos y aplica el corrector ortográfico.
+
+    :param text: String a postprocesar.
+    :param corrector: Corrector ortográfico JamSpell.
+    :return: Texto postprocesado.
+    """
     text = os.linesep.join([s for s in text.splitlines() if s])
     text = os.linesep.join([s for s in text.splitlines() if not es_basura(s)])
     text = unir_saltos_linea(text)
-    text = spellcheck(corrector, text)
+    # text = spellcheck(corrector, text)
     # text = unir_saltos_linea(text) # por qué otra vez?
     text = filtrar_simbolosvalidos(text)
     # text = text.lower() # por qué?
@@ -81,8 +102,14 @@ def postprocesamiento(text, corrector):
     return text
 
 
-# %% funciones de chequeo de las transcripciones
+# funciones de chequeo de las transcripciones
 def palabras_desconocidas(texto, corrector):
+    """
+    Calcula la cantidad de palabras desconocidas para el corrector del texto.
+
+    :param texto: string.
+    :param corrector: Corrector ortográfico JamSpell.
+    """
     cantidad = 0
     for palabra in texto.split():
         cantidad += 0 if corrector.WordIsKnown(palabra) else 1
@@ -91,7 +118,8 @@ def palabras_desconocidas(texto, corrector):
 
 def procesar_imgs(path_in, path_out, modelo_corrector='herramientas/model_juridico.bin'):
     """
-    Exporta los archivos '.tif' de 'path_in' a formato json con toda la noticia como "Cuerpo".
+    Procesa los archivos '.tif' de 'path_in' con un OCR, aplica un corrector ortográfico, cuenta la proporción de
+    palabras desconocidas y los exporta a formato json con toda la noticia como "Cuerpo".
     Además, guarda en 'reporte.csv' la proporción de palabras desconocidas en la imagen.
 
     :param path_in: directorio de donde tomar las imágenes.
@@ -103,7 +131,7 @@ def procesar_imgs(path_in, path_out, modelo_corrector='herramientas/model_juridi
     for filename in os.listdir(path_in):
         if os.path.splitext(filename)[1] == '.tif':
             print(filename)
-            texto = ocr_tesseract(filename, path_in, path_out)
+            texto = ocr_tesseract(filename, path_in)
             texto = postprocesamiento(texto, corrector)
             pp_desc = palabras_desconocidas(texto, corrector) / len(texto.split())
             data.append({'filename': filename, 'palabras_desconocidas': pp_desc})
@@ -125,24 +153,3 @@ def procesar_imgs(path_in, path_out, modelo_corrector='herramientas/model_juridi
     reporte = pd.DataFrame(data=data)
     reporte.to_csv(path_out + 'reporte.csv', index=False)
     print("Reporte guardado en", path_out + "reporte.csv")
-
-# %%
-# ejemplo
-# img = path_in + 'imagen1.tif'
-# img_preprocesada = preprocesamiento(img)
-# # %%
-# # cv2.imshow('ventana1', img_preprocesada)
-# # cv2.waitKey(0)
-# cv2.destroyAllWindows()
-# # %%
-# plt.figure(figsize=(34, 23))
-# plt.imshow(img_preprocesada, cmap='gray')
-# # %%
-# print(img_preprocesada.shape)
-# # %%
-# texto_img = ocr_tesseract('imagen1.tif', path_in, path_out)
-# corrector = inicializar_corrector()
-# texto_img_corregido = postprocesamiento(texto_img, corrector)
-# print(texto_img_corregido)
-# # %%
-# output_file = path_out + 'resultados.xls'
