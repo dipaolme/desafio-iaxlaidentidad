@@ -1,2 +1,7 @@
 /out_data/
 /input_data/
+
+src/__pycache__/
+src/JamSpell/
+venv/
+.idea/
