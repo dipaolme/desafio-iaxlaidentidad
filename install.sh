@@ -5,11 +5,12 @@ sudo apt-get -y install swig4.0;
 
 mkdir input_data;
 mkdir out_data;
+sudo chmod 666 input_data;
+sudo chmod 666 out_data;
 
 cd src;
 git clone https://github.com/bakwc/JamSpell.git;
+sudo chmod 666 JamSpell;
 
 cd JamSpell;
-python3 setup.py build_ext;
-python3 setup.py build_py;
-python3 setup.py install;
+sudo chmod 777 *;
