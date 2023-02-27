@@ -12,8 +12,6 @@ import os
 def mostrar_transcripcion(fname):
     if os.path.splitext(fname)[1] == '.tif':
         fname = os.path.splitext(fname)[0] + '.json'
-    if  os.path.splitext(fname)[1] == '':
-        fname = fname + '....json'
     with open(fname, 'r') as f:
         d = json.load(f)
     
@@ -24,6 +22,6 @@ def mostrar_transcripcion(fname):
         print('----------x----------')
         
 
-fname = 'La Voz 1985-05-04 Ratifican las Abuelas'
+#fname = 'La Voz 1985-05-04 Ratifican las Abuelas'
 #fname = 'La Voz 1985-06-22 Detuvieron en Madrid....json'
-mostrar_transcripcion(fname)
+#mostrar_transcripcion(fname)
