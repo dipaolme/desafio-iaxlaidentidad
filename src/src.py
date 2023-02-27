@@ -130,7 +130,7 @@ def procesar_imgs(path_in, path_out, modelo_corrector='herramientas/model_juridi
     data = []
     for filename in os.listdir(path_in):
         if os.path.splitext(filename)[1] == '.tif':
-            print(filename)
+            print(f'Procesando la imagen: {filename}.\n----------')
             texto = ocr_tesseract(filename, path_in)
             texto = postprocesamiento(texto, corrector)
             pp_desc = palabras_desconocidas(texto, corrector) / len(texto.split())
@@ -152,4 +152,4 @@ def procesar_imgs(path_in, path_out, modelo_corrector='herramientas/model_juridi
 
     reporte = pd.DataFrame(data=data)
     reporte.to_csv(path_out + 'reporte.csv', index=False)
-    print("Reporte guardado en", path_out + "reporte.csv")
+    print(f'Procesamiento finalizado. Los resultados fueron guardados en el directorio: {path_out}.')
